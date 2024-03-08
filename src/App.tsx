@@ -1,16 +1,25 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import { listen } from "@tauri-apps/api/event";
+
+interface EventPayload {
+  number: number;
+}
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [number, setNumber] = useState(0);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
+  useEffect(() => {
+    const unlisten = listen<EventPayload>("myEvent", (event) => {
+      console.log(`Got event: ${event.payload.number}`);
+      setNumber(event.payload.number);
+    });
+
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
 
   return (
     <div className="container">
@@ -30,22 +39,7 @@ function App() {
 
       <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p>{greetMsg}</p>
+      <p>Number: {number}</p>
     </div>
   );
 }
